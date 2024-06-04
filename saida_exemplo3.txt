@@ -1,0 +1,11 @@
+12345
+25
+"Compiladores"
+25
+Erro linha 19: Tipos não compatíveis para atribuição
+25
+""
+"Hello"
+Erro linha 27: Tipos não compatíveis para atribuição
+"Hello"
+45

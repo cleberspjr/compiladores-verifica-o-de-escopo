@@ -1,0 +1,118 @@
+IMPORTAR sys
+IMPORTAR re
+
+FUNÇÃO entra_no_escopo(pilha_de_escopo):
+    ADICIONAR novo dicionário vazio a pilha_de_escopo
+
+FUNÇÃO saindo_do_escopo(pilha_de_escopo):
+    SE pilha_de_escopo NÃO estiver vazia:
+        REMOVER o escopo mais recente da pilha
+    SENÃO:
+        IMPRIMIR "Erro ao sair do escopo!!!"
+
+FUNÇÃO variveis(pilha_de_escopo, linha_atual, lexema, tipo):
+    escopo_atual = último escopo na pilha_de_escopo
+    SE lexema JÁ existir em escopo_atual:
+        IMPRIMIR "Erro linha na linha atual: Variável {lexema} já declarada no escopo atual"
+    SENÃO:
+        ADICIONAR lexema ao escopo_atual com tipo e valor nulo
+
+FUNÇÃO atribui_variavel(pilha_de_escopo, linha_atual, lexema, valor):
+    variavel = procurar lexema na pilha_de_escopo
+    SE variavel EXISTIR:
+        SE tipo de variavel for compatível com tipo de valor:
+            DEFINIR valor da variável
+        SENÃO:
+            IMPRIMIR "Erro linha na linha atual: Tipos não compatíveis para atribuição"
+    SENÃO:
+        IMPRIMIR "Erro linha na linha atual: Variável {lexema} não declarada"
+
+FUNÇÃO procura_variavel(pilha_de_escopo, lexema):
+    PARA cada escopo em pilha_de_escopo, de trás para frente:
+        SE lexema EXISTIR em escopo:
+            RETORNAR a variável encontrada
+    RETORNAR nulo
+
+FUNÇÃO printa_variavel(pilha_de_escopo, linha_atual, lexema):
+    variavel = procurar lexema na pilha_de_escopo
+    SE variavel EXISTIR:
+        SE valor de variavel NÃO for nulo:
+            IMPRIMIR valor de variavel (com ou sem aspas dependendo do tipo)
+        SENÃO:
+            IMPRIMIR "NONE"
+    SENÃO:
+        IMPRIMIR "Erro linha na linha atual: Variável {lexema} não declarada"
+
+FUNÇÃO preprocess_line(line):
+    ADICIONAR espaços ao redor de '=' e ',' na linha
+    RETORNAR linha preprocessada
+
+FUNÇÃO analisador(program):
+    pilha_de_escopo = [dicionário vazio]
+    lines = DIVIDIR program em linhas
+    linha_atual = 0
+
+    PARA cada linha em lines:
+        linha_atual = índice da linha
+        REMOVER comentários e espaços da linha
+        SE linha for vazia:
+            CONTINUAR
+
+        linha = preprocess_line(linha)
+        tokens = DIVIDIR linha em tokens
+
+        SE tokens for vazio:
+            CONTINUAR
+        SE tokens[0] for 'BLOCO':
+            entra_no_escopo(pilha_de_escopo)
+        ELIF tokens[0] for 'FIM':
+            saindo_do_escopo(pilha_de_escopo)
+        ELIF tokens[0] for 'NUMERO' OU 'CADEIA':
+            tipo = tokens[0]
+            declaração = DIVIDIR restantes tokens por ','
+
+            PARA cada declaração em declaração:
+                SEPARAR declaração em nome e valor da variável
+                lexema = nome da variável
+                variveis(pilha_de_escopo, linha_atual, lexema, tipo)
+                SE valor EXISTIR:
+                    REMOVER aspas de valor
+                    SE tipo for 'NUMERO':
+                        TENTAR converter valor para número
+                        SE falhar:
+                            IMPRIMIR erro e CONTINUAR
+                    atribui_variavel(pilha_de_escopo, linha_atual, lexema, valor)
+
+        ELIF tokens[0] for 'PRINT':
+            printa_variavel(pilha_de_escopo, linha_atual, tokens[1])
+
+        ELIF tokens[1] for '=':
+            lexema = tokens[0]
+            valor = UNIR tokens restantes
+
+            SE valor for uma string (entre aspas):
+                REMOVER aspas
+            ELIF valor for um número:
+                CONVERTER para número
+            SENÃO:
+                variavel_valor = procurar valor na pilha_de_escopo
+                SE variavel_valor EXISTIR:
+                    variavel_lexema = procurar lexema na pilha_de_escopo
+                    SE tipos compatíveis:
+                        DEFINIR valor como valor de variavel_valor
+                    SENÃO:
+                        IMPRIMIR erro e CONTINUAR
+                SENÃO:
+                    IMPRIMIR erro e CONTINUAR
+
+            atribui_variavel(pilha_de_escopo, linha_atual, lexema, valor)
+
+FUNÇÃO main():
+    arquivo = PEDIR nome do arquivo
+    FAÇA:
+        ABRIR arquivo
+        ler programa
+        analisador(programa)
+    EXCETO arquivo não encontrado:
+        IMPRIMIR "Erro: Arquivo {arquivo} não encontrado"
+
