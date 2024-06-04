@@ -1,0 +1,1 @@
+# compiladores-verifica-o-de-escopo
